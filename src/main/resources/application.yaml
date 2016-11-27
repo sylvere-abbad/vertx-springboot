@@ -1,0 +1,12 @@
+http:
+  port: 8080
+mongodb:
+  host: "localhost"
+  port: 27017
+  db_name: "plateforme_reference"
+rabbitmq:
+  user: "guest"
+  password: "guest"
+  host: "localhost"
+  port: 5672
+  virtualHost: "/"
