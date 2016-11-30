@@ -5,8 +5,11 @@ mongodb:
   port: 27017
   db_name: "plateforme_reference"
 rabbitmq:
-  user: "guest"
-  password: "guest"
   host: "localhost"
   port: 5672
+  user: "guest"
+  password: "guest"
   virtualHost: "/"
+redis:
+  host: "localhost"
+  port: 6379

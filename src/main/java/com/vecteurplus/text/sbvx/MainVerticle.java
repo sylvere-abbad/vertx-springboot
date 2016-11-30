@@ -13,6 +13,7 @@ import io.vertx.rxjava.core.http.HttpServer;
 import io.vertx.rxjava.ext.web.Router;
 import io.vertx.rxjava.ext.web.RoutingContext;
 import io.vertx.rxjava.rabbitmq.RabbitMQClient;
+import io.vertx.rxjava.redis.RedisClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +33,14 @@ public class MainVerticle extends AbstractVerticle {
   private static final Logger logger = LogManager.getLogger();
 
   @Autowired
-  private ApplicationConfiguration _configuration;
-
-  @Autowired
   private RabbitMQClient _rabbitMQClient;
 
   @Autowired
+  private RedisClient _redisClient;
+
+  @Autowired
   private MarcheService _marcheService;
+
 
   @Value("${http.port}")
   private int _httpPort;
@@ -120,11 +122,21 @@ public class MainVerticle extends AbstractVerticle {
     eventBus.consumer("marches.get").handler(this::gotMarche);
   }
 
-  private void setupRabbitConsumers(RabbitMQClient rabbit) {
-    rabbit.basicConsume("vertx.marches.get", "marches.get", consumeResult -> {
-      if (consumeResult.failed()) consumeResult.cause().printStackTrace();
-      else logger.info("Consumed rabbitmq message from vertx.marches.get queue");
-    });
+  private Single<Void> setupRabbitConsumers(RabbitMQClient rabbit) {
+    logger.info("Setting up rabbit consumers.");
+    return rabbit.basicConsumeObservable("vertx.marches.get", "marches.get").toSingle()
+      .doOnSuccess(aVoid -> logger.info("Consumer for vertx.marches.get queue declared."));
+  }
+
+  private Single<JsonObject> setupRabbitTopology(RabbitMQClient rabbit) {
+    logger.info("Setting up rabbit topology.");
+    return rabbit.queueDeclareObservable("vertx.marches.get", true, false, false).toSingle()
+      .doOnSuccess(result -> logger.info("Rabbit topology set up done : {} ", result.encodePrettily()));
+  }
+
+  private Single<Void> setupRabbit(RabbitMQClient rabbit) {
+    return setupRabbitTopology(rabbit)
+      .flatMap(result -> setupRabbitConsumers(rabbit));
   }
 
   @Override
@@ -139,13 +151,8 @@ public class MainVerticle extends AbstractVerticle {
         _rabbitMQClient.startObservable().toSingle(),
         Arrays::asList
       )
-      .doOnSuccess(results -> setupRabbitConsumers(_rabbitMQClient))
+      .flatMap(results -> setupRabbit(_rabbitMQClient))
       .flatMap(result -> Single.<Void>just(null))
       .subscribe(startFuture::complete, startFuture::fail);
-//    httpServer.listenObservable(_httpPort).toSingle()
-//      .doOnSuccess(result -> logger.info("MainVerticle http server started on port {}", _httpPort))
-//        .flatMap(result -> Observable.<Void>just(null).toSingle())
-//      .subscribe(result -> startFuture.complete(), startFuture::fail);
-//        .subscribe(startFuture::complete, startFuture::fail);
   }
 }

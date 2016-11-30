@@ -1,9 +1,11 @@
 package com.vecteurplus.text.sbvx;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.redis.RedisOptions;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.ext.mongo.MongoClient;
 import io.vertx.rxjava.rabbitmq.RabbitMQClient;
+import io.vertx.rxjava.redis.RedisClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,5 +51,17 @@ public class ApplicationConfiguration {
   @Bean
   RabbitMQClient rabbitMQClient(Vertx vertx, JsonObject rabbitmqConfiguration) {
     return RabbitMQClient.create(vertx, rabbitmqConfiguration);
+  }
+
+  @Bean
+  RedisOptions redisOptions() {
+    return new RedisOptions()
+      .setHost(env.getProperty("redis.host"))
+      .setPort(env.getProperty("redis.port", Integer.class, 6379));
+  }
+
+  @Bean
+  RedisClient redisClient(Vertx vertx, RedisOptions redisOptions) {
+    return RedisClient.create(vertx, redisOptions);
   }
 }

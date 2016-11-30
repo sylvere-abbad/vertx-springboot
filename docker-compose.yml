@@ -1,0 +1,58 @@
+version: "2"
+services:
+  # plateforme-web:
+  #   image: localhost:5000/plateforme-web
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - plateforme-api
+  #   networks:
+  #     - front
+  # plateforme-api:
+  #   image: localhost:5000/plateforme-api
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - elasticsearch
+  #     - mongodb
+  #     - rabbitmq
+  #   networks:
+  #     - front
+  #     - back
+  # elasticsearch:
+  #   image: elasticsearch:1.7
+  #   ports:
+  #     - "9200:9200"
+  #     - "9300:9300"
+  #   volumes:
+  #     - C:/dev/data/docker/elasticsearch/data:/usr/share/elasticsearch/data
+  #   networks:
+  #     - back
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - back
+    command: mongod --directoryperdb
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - back
+  redis:
+    image: redis:3.0.7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+ mongodata:
+   driver: local
+networks:
+#  front:
+#    driver: bridge
+  back:
+    driver: bridge
