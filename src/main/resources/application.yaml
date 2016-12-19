@@ -1,5 +1,5 @@
 http:
-  port: 8080
+  port: 7070
 mongodb:
   host: "localhost"
   port: 27017

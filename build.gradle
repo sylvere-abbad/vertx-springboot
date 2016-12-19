@@ -35,9 +35,10 @@ repositories {
 }
 
 dependencies {
-    compile("org.springframework.boot:spring-boot-starter") {
+    compile("org.springframework.boot:spring-boot-starter-web") {
         exclude group: "ch.qos.logback"
     }
+    compile("org.springframework.boot:spring-boot-actuator")
     compile "io.vertx:vertx-core:$vertxVersion"
     compile "io.vertx:vertx-web:$vertxVersion"
     compile "io.vertx:vertx-rx-java:$vertxVersion"
@@ -51,6 +52,8 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonYamlVersion"
     compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "org.jolokia:jolokia-core:1.3.5"
+    compile "io.dropwizard.metrics:metrics-core:3.1.2"
     testCompile "junit:junit:$junitVersion"
 }
 

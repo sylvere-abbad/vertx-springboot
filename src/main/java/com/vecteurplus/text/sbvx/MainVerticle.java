@@ -1,5 +1,7 @@
 package com.vecteurplus.text.sbvx;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpMethod;
@@ -14,6 +16,7 @@ import io.vertx.rxjava.ext.web.Router;
 import io.vertx.rxjava.ext.web.RoutingContext;
 import io.vertx.rxjava.rabbitmq.RabbitMQClient;
 import io.vertx.rxjava.redis.RedisClient;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import rx.Single;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 
@@ -41,12 +45,21 @@ public class MainVerticle extends AbstractVerticle {
   @Autowired
   private MarcheService _marcheService;
 
+  @Autowired
+  private MetricRegistry _metricRegistry;
+
+  private Histogram _histogram;
 
   @Value("${http.port}")
   private int _httpPort;
 
   public MainVerticle() {
     //
+  }
+
+  @PostConstruct
+  protected  void initialize() {
+    _histogram = _metricRegistry.histogram("histogram.marches.get");
   }
 
   private void updateMarche(RoutingContext routingContext) {
@@ -82,10 +95,23 @@ public class MainVerticle extends AbstractVerticle {
       );
   }
 
+  protected StopWatch startWatch() {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    return stopWatch;
+  }
+
+  protected void stopWatchAndUpdate(StopWatch stopWatch) {
+    stopWatch.stop();
+    _histogram.update(stopWatch.getTime());
+  }
+
   private void getMarche(RoutingContext routingContext) {
+    StopWatch stopWatch = startWatch();
     Single.just(routingContext.request().getParam("id"))
       .map(Long::parseLong)
       .flatMap(_marcheService::get)
+      .doOnSuccess(result -> stopWatchAndUpdate(stopWatch))
       .subscribe(
         marche -> encodeOrNotFound(marche, routingContext),
         routingContext::fail
